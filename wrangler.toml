@@ -2,7 +2,9 @@ name = "move-car-notify"
 main = "src/index.js"
 compatibility_date = "2024-04-30"
 
+# 公开仓库中不要在此处填写具体数值
+# 请在 Cloudflare 控制台的 Settings -> Variables 中添加这些变量
 [vars]
-PHONE_NUMBER = "18217840528"
-BARK_URL = "https://bark.zznuo.com/SgjCabfe6UkXXcBSN4mogx/有人找你挪车啦/请尽快处理"
-PUSHPLUS_TOKEN = "514ebbedcc914f4f94c01ffc0a30dcba"
+PHONE_NUMBER = "PLACEHOLDER"
+BARK_URL = "PLACEHOLDER"
+PUSHPLUS_TOKEN = "PLACEHOLDER"
