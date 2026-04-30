@@ -4,8 +4,29 @@ export async function onRequest(context) {
 
   const url = new URL(request.url);
   
-  // 关键逻辑：只有路径为 /move 时才触发通知和拨号
-  // 这样可以屏蔽掉 99% 的自动爬虫（它们通常访问 / 或 /robots.txt）
+  // 处理根路径，显示图片
+  if (url.pathname === '/' || url.pathname === '') {
+    const rootHtml = `
+    <!DOCTYPE html>
+    <html lang="zh-CN">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>挪车服务</title>
+      <style>
+        body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #000; }
+        img { max-width: 100%; max-height: 100vh; object-fit: contain; }
+      </style>
+    </head>
+    <body>
+      <img src="https://img.ganzi.fun/file/AgACAgUAAyEGAATnFyQYAAMaafLmOYVZEXUesBDZVYe2_Cydr6IAAhkPaxvm6JlXpQ21by5H128BAAMCAAN5AAM7BA.jpg" alt="挪车码">
+    </body>
+    </html>
+    `;
+    return new Response(rootHtml, { headers: { 'Content-Type': 'text/html;charset=UTF-8' } });
+  }
+
+  // 只有路径为 /move 时才触发通知和拨号
   if (url.pathname !== '/move' && url.pathname !== '/move/') {
     return new Response('Not Found', { status: 404 });
   }
@@ -56,7 +77,12 @@ export async function onRequest(context) {
   </html>
   `;
 
-  return new Response(html, { headers: { 'Content-Type': 'text/html;charset=UTF-8' } });
+  return new Response(html, { 
+    headers: { 
+      'Content-Type': 'text/html;charset=UTF-8',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
+    } 
+  });
 }
 
 async function sendNotifications(barkUrl, pushplusToken) {
