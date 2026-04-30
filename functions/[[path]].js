@@ -2,6 +2,14 @@ export async function onRequest(context) {
   const { request, env, waitUntil } = context;
   const { PHONE_NUMBER, BARK_URL, PUSHPLUS_TOKEN } = env;
 
+  const url = new URL(request.url);
+  
+  // 关键逻辑：只有路径为 /move 时才触发通知和拨号
+  // 这样可以屏蔽掉 99% 的自动爬虫（它们通常访问 / 或 /robots.txt）
+  if (url.pathname !== '/move' && url.pathname !== '/move/') {
+    return new Response('Not Found', { status: 404 });
+  }
+
   if (!PHONE_NUMBER || PHONE_NUMBER === 'PLACEHOLDER') {
     return new Response('Config Error', { status: 500 });
   }
@@ -9,7 +17,6 @@ export async function onRequest(context) {
   // 1. 静默触发通知
   waitUntil(sendNotifications(BARK_URL, PUSHPLUS_TOKEN));
 
-  // 2. 获取用户代理，判断是否为微信
   const ua = request.headers.get('user-agent') || '';
   const isWechat = /MicroMessenger/i.test(ua);
 
@@ -39,7 +46,6 @@ export async function onRequest(context) {
       <div class="footer">由 云端挪车助手 提供支持</div>
     </div>
     <script>
-      // 针对微信环境的自动拨号策略
       window.onload = function() {
         setTimeout(function() {
           window.location.href = "tel:${PHONE_NUMBER}";
@@ -64,8 +70,8 @@ async function sendNotifications(barkUrl, pushplusToken) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         token: pushplusToken,
-        title: '挪车通知',
-        content: '有人扫码找你挪车啦，请留意电话。',
+        title: '有人扫描了您的挪车码',
+        content: '扫描者已进入拨号页面，请留意电话。',
         channel: 'wechat'
       })
     }).catch(() => {}));
