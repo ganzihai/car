@@ -64,7 +64,7 @@ export async function onRequest(context) {
       <h2>通知已发送</h2>
       <p>车主已收到挪车请求<br>正在赶往现场，请稍候...</p>
       <a href="tel:${PHONE_NUMBER}" class="btn">立即拨打电话</a>
-      <div class="footer">由 云端挪车助手 提供支持</div>
+      <div class="footer">由交管12123挪车助手 提供支持</div>
     </div>
     <script>
       window.onload = function() {
