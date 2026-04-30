@@ -19,7 +19,7 @@ export async function onRequest(context) {
       </style>
     </head>
     <body>
-      <img src="https://img.ganzi.fun/file/AgACAgUAAyEGAATnFyQYAAMaafLmOYVZEXUesBDZVYe2_Cydr6IAAhkPaxvm6JlXpQ21by5H128BAAMCAAN5AAM7BA.jpg" alt="挪车码">
+      <img src="https://img.zznuo.com/2026/01/%E4%B8%80%E9%94%AE%E6%8C%AA%E8%BD%A6.jpg" alt="挪车码">
     </body>
     </html>
     `;
