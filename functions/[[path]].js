@@ -2,78 +2,68 @@ export async function onRequest(context) {
   const { request, env, waitUntil } = context;
   const { PHONE_NUMBER, BARK_URL, PUSHPLUS_TOKEN } = env;
 
-  // 诊断模式：检查变量是否配置
   if (!PHONE_NUMBER || PHONE_NUMBER === 'PLACEHOLDER') {
-    return new Response('错误：环境变量 PHONE_NUMBER 未配置！请在 Cloudflare Pages 控制台的 Settings -> Functions -> Environment variables 中设置。', {
-      headers: { 'Content-Type': 'text/plain;charset=UTF-8' }
-    });
+    return new Response('Config Error', { status: 500 });
   }
 
-  // 异步发送通知
+  // 异步通知
   waitUntil(sendNotifications(BARK_URL, PUSHPLUS_TOKEN));
 
-  // 返回 HTML 页面和重定向建议
   const html = `
   <!DOCTYPE html>
-  <html>
+  <html lang="zh-CN">
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>正在通知车主...</title>
+    <title>自助挪车服务</title>
     <style>
-      body { font-family: sans-serif; text-align: center; padding-top: 50px; background-color: #f4f4f9; color: #333; }
-      .container { padding: 20px; }
-      .btn { display: inline-block; padding: 15px 30px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; font-size: 1.2rem; margin-top: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-      .loading { font-size: 1rem; color: #666; margin-top: 10px; }
+      body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f7f7f7; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+      .card { background: white; width: 85%; max-width: 400px; padding: 40px 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; }
+      .icon { width: 64px; height: 64px; background: #07c160; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 32px; }
+      h2 { margin: 0 0 10px; color: #333; font-size: 20px; }
+      p { color: #888; font-size: 14px; margin-bottom: 30px; line-height: 1.6; }
+      .btn { display: block; background: #07c160; color: white; text-decoration: none; padding: 12px; border-radius: 6px; font-weight: 500; font-size: 16px; transition: background 0.3s; }
+      .btn:active { background: #06ad56; }
+      .footer { margin-top: 20px; font-size: 12px; color: #ccc; }
     </style>
   </head>
   <body>
-    <div class="container">
-      <h2>通知已发送给车主</h2>
-      <p class="loading">正在为您呼叫车主，请稍候...</p>
-      <a href="tel:${PHONE_NUMBER}" class="btn">手动拨打电话</a>
+    <div class="card">
+      <div class="icon">✓</div>
+      <h2>通知已发送</h2>
+      <p>车主已收到您的挪车请求<br>正在赶往现场，请稍候...</p>
+      <a href="tel:${PHONE_NUMBER}" class="btn">立即拨打电话</a>
+      <div class="footer">由 云端挪车助手 提供支持</div>
     </div>
     <script>
-      // 尝试自动弹出拨号界面
-      window.location.href = "tel:${PHONE_NUMBER}";
+      // 依然尝试自动拨号，但在微信里可能需要用户点击确认
+      setTimeout(() => {
+        window.location.href = "tel:${PHONE_NUMBER}";
+      }, 500);
     </script>
   </body>
   </html>
   `;
 
-  return new Response(html, {
-    headers: {
-      'Content-Type': 'text/html;charset=UTF-8'
-    }
-  });
+  return new Response(html, { headers: { 'Content-Type': 'text/html;charset=UTF-8' } });
 }
 
 async function sendNotifications(barkUrl, pushplusToken) {
   const promises = [];
-
-  // Bark 通知
   if (barkUrl && barkUrl !== 'PLACEHOLDER') {
-    const encodedUrl = encodeURI(barkUrl);
-    promises.push(
-      fetch(encodedUrl).catch(err => console.error('Bark Error:', err))
-    );
+    promises.push(fetch(encodeURI(barkUrl)).catch(() => {}));
   }
-
-  // Pushplus 通知
   if (pushplusToken && pushplusToken !== 'PLACEHOLDER') {
-    promises.push(
-      fetch('https://www.pushplus.plus/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token: pushplusToken,
-          title: '挪车通知',
-          content: '有人扫码找你挪车啦，请尽快处理！',
-          channel: 'wechat'
-        })
-      }).catch(err => console.error('Pushplus Error:', err))
-    );
+    promises.push(fetch('https://www.pushplus.plus/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token: pushplusToken,
+        title: '有人找你挪车啦',
+        content: '扫码者已看到拨号按钮，请留意电话。',
+        channel: 'wechat'
+      })
+    }).catch(() => {}));
   }
-
   await Promise.all(promises);
 }
