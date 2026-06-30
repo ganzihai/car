@@ -1,10 +1,10 @@
 export async function onRequest(context) {
   const { request, env, waitUntil } = context;
-  const { PHONE_NUMBER, BARK_URL, PUSHPLUS_TOKEN } = env;
+  const { PHONE_NUMBER, BARK_URL, PUSHPLUS_TOKEN, SECRET_KEY } = env;
 
   const url = new URL(request.url);
   
-  // 处理根路径，显示图片
+  // 根路径 - 显示图片（保持不变，无需令牌）
   if (url.pathname === '/' || url.pathname === '') {
     const rootHtml = `
     <!DOCTYPE html>
@@ -26,16 +26,25 @@ export async function onRequest(context) {
     return new Response(rootHtml, { headers: { 'Content-Type': 'text/html;charset=UTF-8' } });
   }
 
-  // 只有路径为 /move 时才触发通知和拨号
+  // 只处理 /move 或 /move/ 路径
   if (url.pathname !== '/move' && url.pathname !== '/move/') {
     return new Response('Not Found', { status: 404 });
   }
 
+  // ---------- 新增：令牌验证 ----------
+  const providedSecret = url.searchParams.get('secret') || '';
+  if (!SECRET_KEY || SECRET_KEY === 'PLACEHOLDER' || providedSecret !== SECRET_KEY) {
+    // 无令牌或令牌错误，返回 403，不触发任何通知
+    return new Response('Forbidden', { status: 403 });
+  }
+  // ----------------------------------
+
+  // 验证手机号配置
   if (!PHONE_NUMBER || PHONE_NUMBER === 'PLACEHOLDER') {
     return new Response('Config Error', { status: 500 });
   }
 
-  // 1. 静默触发通知
+  // 1. 静默触发通知（只有通过令牌验证才会执行）
   waitUntil(sendNotifications(BARK_URL, PUSHPLUS_TOKEN));
 
   const ua = request.headers.get('user-agent') || '';
@@ -85,6 +94,7 @@ export async function onRequest(context) {
   });
 }
 
+// sendNotifications 函数无需改动，保持原样
 async function sendNotifications(barkUrl, pushplusToken) {
   const promises = [];
   if (barkUrl && barkUrl !== 'PLACEHOLDER') {
